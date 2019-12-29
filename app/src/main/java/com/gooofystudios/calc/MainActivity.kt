@@ -45,11 +45,10 @@ class MainActivity : AppCompatActivity() {
                     MotionEvent.ACTION_MOVE -> {
                         velocityTracker!!.addMovement(event)
                         velocityTracker!!.computeCurrentVelocity(100)
-                        //Log.e("DIFF","${velocityTracker!!.getYVelocity(event.getPointerId(event.actionIndex))*0.005}")
-                        //Log.e("PROGESS","${mainMotion.progress}")
+                        ///Velocity for high for easier tracking of speed
                         val changeHigh = velocityTracker!!.getYVelocity(event.getPointerId(event.actionIndex)) * 0.005
                         val speed = if (changeHigh < 0) changeHigh * -1 else changeHigh
-                        Log.e("SPEED", "$changeHigh")
+                        //If high speed, do animation automatically
                         if (speed > 2.5) {
                             if (changeHigh < 0) {
                                 mainMotion.transitionToStart()
@@ -67,6 +66,7 @@ class MainActivity : AppCompatActivity() {
                             },200)
                             false
                         } else {
+                            ///Change progress based on touch velocity (multiplied by 0.0003 to work within range 0 - 1)
                             val change = velocityTracker!!.getYVelocity(event.getPointerId(event.actionIndex)) * 0.0003f
                             if ((mainMotion.progress + change) in 0f..1f) {
                                 mainMotion.progress += change
@@ -75,6 +75,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     MotionEvent.ACTION_UP -> {
+                        ///Adds margin in order to carry out anim automatically
                         if (!isReversed) {
                             if (mainMotion.progress < 0.2f) {
                                 mainMotion.transitionToStart()
@@ -105,8 +106,6 @@ class MainActivity : AppCompatActivity() {
                 false
             }
         }
-
-
 
         darkenForeground.setOnClickListener{
             mainMotion.transitionToStart()
