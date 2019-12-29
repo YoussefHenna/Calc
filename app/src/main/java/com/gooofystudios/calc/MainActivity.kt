@@ -21,6 +21,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         initDragAction()
 
+        TODO("Calc button to be implemented in separate motion layout to keep progresses apart")
+
     }
 
 
