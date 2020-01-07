@@ -9,27 +9,22 @@
     app:layoutDescription="@xml/activity_main_scene">
 
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.constraintlayout.motion.widget.MotionLayout
         android:id="@+id/bottomContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="234dp"
         android:background="@color/colorPrimaryDark"
+        app:layoutDescription="@xml/activity_main_xml_bottomcontainer_scene"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="HELLO"
-            android:textSize="30dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:textColor="@android:color/white"/>
+        <include layout="@layout/bottom_container_layout"/>
 
 
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.motion.widget.MotionLayout>
     <FrameLayout
         android:id="@+id/darkenForeground"
         android:layout_width="match_parent"
@@ -37,6 +32,8 @@
         android:alpha="0.0"
         android:background="@android:color/black">
     </FrameLayout>
+
+
 
     <com.lijiankun24.shadowlayout.ShadowLayout
         android:id="@+id/topContainer"

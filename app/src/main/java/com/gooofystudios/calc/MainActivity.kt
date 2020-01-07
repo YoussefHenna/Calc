@@ -7,6 +7,8 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.VelocityTracker
 import android.view.View
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import kotlinx.android.synthetic.main.activity_main.*
@@ -21,12 +23,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         initDragAction()
 
-        TODO("Calc button to be implemented in separate motion layout to keep progresses apart")
 
     }
 
 
 
+    public fun onButtonClicked(v: View){
+        val tv = v as TextView
+        Toast.makeText(this,"${tv.text} Clicked",Toast.LENGTH_SHORT).show()
+        ////////NOT WORKING FOR SOME REASON
+
+    }
 
     private fun initDragAction(){
         mainMotion.setTransition(R.id.start,R.id.expanded_top)
