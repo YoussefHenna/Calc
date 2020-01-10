@@ -6,14 +6,128 @@
     <Transition
         motion:constraintSetEnd="@+id/end"
         motion:constraintSetStart="@id/start"
-        motion:duration="1000">
+        motion:duration="500">
        <KeyFrameSet>
        </KeyFrameSet>
     </Transition>
 
     <ConstraintSet android:id="@+id/start">
+        <Constraint
+            android:id="@+id/numLayoutHorizontal1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal2"
+            motion:layout_constraintTop_toTopOf="parent">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="4" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal2"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal3"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal1">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="4" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal3"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal4"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal2">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="4" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal4"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal5"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal3">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="4" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal5"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal4">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="4" />
+        </Constraint>
     </ConstraintSet>
 
     <ConstraintSet android:id="@+id/end">
+        <Constraint
+            android:id="@+id/numLayoutHorizontal_2"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:visibility="visible"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal_1"
+            motion:layout_constraintTop_toTopOf="parent" />
+        <Constraint
+            android:id="@+id/numLayoutHorizontal_1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:visibility="visible"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal1"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal_2" />
+        <Constraint
+            android:id="@+id/numLayoutHorizontal1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal2"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal_1">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="5" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal2"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal3"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal1">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="5" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal3"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal4"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal2">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="5" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal4"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toTopOf="@id/numLayoutHorizontal5"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal3">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="5" />
+        </Constraint>
+        <Constraint
+            android:id="@+id/numLayoutHorizontal5"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/numLayoutHorizontal4">
+            <CustomAttribute
+                motion:attributeName="weightSum"
+                motion:customFloatValue="5" />
+        </Constraint>
     </ConstraintSet>
 </MotionScene>
