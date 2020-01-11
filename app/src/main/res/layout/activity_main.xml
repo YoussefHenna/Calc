@@ -559,7 +559,7 @@
                 android:gravity="end|bottom"
                 android:alpha="0.5"
                 android:autoSizeTextType="uniform"
-                android:autoSizeMinTextSize="25dp"
+                android:autoSizeMinTextSize="12dp"
                 android:autoSizeMaxTextSize="40dp"
                 android:autoSizeStepGranularity="2dp"
                 android:textColor="@android:color/white"

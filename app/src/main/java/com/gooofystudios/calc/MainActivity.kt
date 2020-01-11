@@ -19,6 +19,7 @@ import androidx.core.animation.addListener
 import androidx.core.view.setPadding
 import com.fathzer.soft.javaluator.DoubleEvaluator
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.IllegalArgumentException
 import java.text.DecimalFormat
 
 
@@ -57,9 +58,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         var before = ""
+        var lastBefore = ""
         mainBigText.addTextChangedListener(object: TextWatcher{
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 before = s.toString()
+                if(before.length >= 4) {
+                    lastBefore = before.substring(before.length - 4,before.length)
+                }
+                else if(before.length  >= 3){
+                    lastBefore = before.substring(before.length - 3,before.length)
+                }
 
             }
 
@@ -72,45 +80,102 @@ class MainActivity : AppCompatActivity() {
                     mainBigText.text = before
                     Toast.makeText(this@MainActivity,"Max character count reached",Toast.LENGTH_SHORT).show()
                 }
+                var lastAfter = ""
+                if(s.toString().length >= 3) {
+                    lastAfter = s.toString().substring(s.toString().length - 3, s.toString().length)
+                }
+                else if(s.toString().length >= 2){
+                    lastAfter = s.toString().substring(s.toString().length - 2, s.toString().length)
+
+                }
+
+                ////Delete trig on logs as a whole
+                deleteWhole(lastBefore,lastAfter,before)
             }
         })
     }
 
+    private fun deleteWhole(lastBefore: String, lastAfter: String, before: String){
+        if(lastBefore.contains("sin(") && lastAfter.contains("sin") && !lastAfter.contains("sin(")){
+            mainBigText.text = before.substring(0,before.lastIndexOf("sin("))
+        }
+        else if(lastBefore.contains("cos(") && lastAfter.contains("cos") && !lastAfter.contains("cos(")){
+            mainBigText.text = before.substring(0,before.lastIndexOf("cos("))
+        }
+        else if(lastBefore.contains("tan(") && lastAfter.contains("tan") && !lastAfter.contains("tan(")){
+            mainBigText.text = before.substring(0,before.lastIndexOf("tan("))
+        }
+        else if(lastBefore.contains("log(") && lastAfter.contains("log") && !lastAfter.contains("log(")){
+            mainBigText.text = before.substring(0,before.lastIndexOf("log("))
+        }
+        else if(lastBefore.contains("ln(") && lastAfter.contains("ln") && !lastAfter.contains("ln(")){
+            mainBigText.text = before.substring(0,before.lastIndexOf("ln("))
+        }
+    }
 
     public fun onButtonClicked(v: View){
         val tv = v as TextView
-        when(tv.text.toString()){
-            "C" ->{
+        val text = tv.text.toString()
+        if(text == "÷" || text == "x" || text == "%" || text == "-" || text == "+"){
+            var bigTxt = mainBigText.text.toString()
+            if (bigTxt.contains("=")) {
+                bigTxt = bigTxt.substring(bigTxt.indexOf("=") + 1)
+                if (bigTxt.isNotEmpty()) bigTxt = bigTxt.substring(0, bigTxt.length)
+                mainBigText.text = bigTxt
+            }
+            val newTxt = mainBigText.text.toString() + tv.text.toString()
+            mainBigText.text = newTxt
+
+        }
+        else if(text == "sin" || text == "cos" || text == "tan" || text == "log" || text == "ln"){
+            var bigTxt = mainBigText.text.toString()
+            if (bigTxt.contains("=")) {
                 mainSmallText.text = ""
                 mainBigText.text = ""
             }
-            "Del" ->{
-                var bigTxt = mainBigText.text.toString()
-                if(bigTxt.contains("=")){
-                    bigTxt = bigTxt.substring(bigTxt.indexOf("=")+1)
-                    if(bigTxt.isNotEmpty()) bigTxt = bigTxt.substring(0,bigTxt.length-1)
-                    mainBigText.text = bigTxt
+            val newTxt = mainBigText.text.toString() + text + "("
+            mainBigText.text = newTxt
+        }
+        else {
+            when (text) {
+                "C" -> {
+                    mainSmallText.text = ""
+                    mainBigText.text = ""
                 }
-                else{
-                    if(bigTxt.isNotEmpty()) bigTxt = bigTxt.substring(0,bigTxt.length-1)
-                    mainBigText.text = bigTxt
+                "Del" -> {
+                    var bigTxt = mainBigText.text.toString()
+                    if (bigTxt.contains("=")) {
+                        mainSmallText.text = ""
+                        mainBigText.text = ""
+                    } else {
+                        if (bigTxt.isNotEmpty()) bigTxt = bigTxt.substring(0, bigTxt.length - 1)
+                        mainBigText.text = bigTxt
+                    }
                 }
-            }
-            "=" ->{
-                mainSmallText.text = mainBigText.text
-                val answer = evalExpression(mainBigText.text.toString())
-                mainBigText.text = "= $answer"
+                "=" -> {
+                    mainSmallText.text = mainBigText.text
+                    val answer = evalExpression(mainBigText.text.toString())
+                    mainBigText.text = "= $answer"
 
-            }
-            else ->{
-                var bigTxt = mainBigText.text.toString()
-                if(bigTxt.contains("=")){
-                    bigTxt = bigTxt.substring(bigTxt.indexOf("=")+1)
-                    if(bigTxt.isNotEmpty()) bigTxt = bigTxt.substring(0,bigTxt.length)
-                    mainBigText.text = bigTxt
                 }
-                val newTxt = mainBigText.text.toString() + tv.text.toString()
-                mainBigText.text = newTxt
+                "2nd" -> {
+
+                }
+                "deg" ->{
+
+                }
+                "rad" ->{
+
+                }
+                else -> {
+                    var bigTxt = mainBigText.text.toString()
+                    if (bigTxt.contains("=")) {
+                        mainSmallText.text = ""
+                        mainBigText.text = ""
+                    }
+                    val newTxt = mainBigText.text.toString() + text
+                    mainBigText.text = newTxt
+                }
             }
         }
 
@@ -123,15 +188,18 @@ class MainActivity : AppCompatActivity() {
 
 
         val evaluator = DoubleEvaluator()
-        val answer = evaluator.evaluate(expression)
+        try {
+            val answer = evaluator.evaluate(expression)
 
 
-        if(answer.toInt().toDouble() == answer){
-            return answer.toInt().toString()
-        }
-        else{
-            val df = DecimalFormat("0.00")
-            return df.format(answer)
+            if (answer.toInt().toDouble() == answer) {
+                return answer.toInt().toString()
+            } else {
+                val df = DecimalFormat("0.00")
+                return df.format(answer)
+            }
+        }catch (e: IllegalArgumentException){
+            return "Syntax Error"
         }
 
     }
