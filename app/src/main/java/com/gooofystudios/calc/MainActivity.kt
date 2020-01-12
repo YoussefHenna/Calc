@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
 
 
 
+    //Initialized default values and click listeners (instead of cramming "onCreate()")
     private fun initViews(){
         mainBigText.setSelection(mainBigText.text.toString().length)
         darkenForeground.visibility = View.GONE
@@ -56,10 +57,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        //Disables keyboard
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mainBigText.showSoftInputOnFocus = false
         }
         mainBigText.requestFocus()
+
+        //Disables selection menu
         mainBigText.customSelectionActionModeCallback = object : ActionMode.Callback {
             override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
                 return false
@@ -77,6 +81,10 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
+    ////Handles Deletion of (sin,cos,log etc..) with a single click instead of letter by letter
+    ///Boolean returned is to notify that the deletion has been handled and should'nt be handled agaian (Check function of "Del" button)
+    ///A bit messy but works so don't question it
     private fun handleByWhole():Boolean{
         try {
             var bigTxt = mainBigText.text.toString()
@@ -222,9 +230,20 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
+
+    /*
+    NOTE:
+    mainBigText.setSelection()
+    is used repeatedly (in "onButtonClicked()") to maintain the position of the selection pointer whenever text is changed
+     */
+
+
+    //Click listener for all calculator Buttons
     public fun onButtonClicked(v: View){
         val tv = v as TextView
         val text = tv.text.toString()
+
+        //Operations' buttons handled separately in order to enable calculations using the answer of prev calculation
         if(text == "÷" || text == "x" || text == "%" || text == "-" || text == "+"){
             var bigTxt = mainBigText.text.toString()
             if (bigTxt.contains("=")) {
@@ -241,6 +260,8 @@ class MainActivity : AppCompatActivity() {
             mainBigText.setSelection(pos+1)
 
         }
+
+        ///Trig and log separately to be added alongside "("
         else if(text == "sin" || text == "cos" || text == "tan" || text == "log" || text == "ln"){
             var bigTxt = mainBigText.text.toString()
             if (bigTxt.contains("=")) {
@@ -262,18 +283,23 @@ class MainActivity : AppCompatActivity() {
         else {
             when (text) {
                 "C" -> {
+                    ///Clears calc
                     mainSmallText.setText("")
                     mainBigText.setText("")
                 }
                 "Del" -> {
+                    //Deletes character
                     var bigTxt = mainBigText.text.toString()
                     if (bigTxt.contains("=")) {
+                        //Clears if previous was answer
                         mainSmallText.setText("")
                         mainBigText.setText("")
                         bigTxt = mainBigText.text.toString()
                         mainBigText.setSelection(bigTxt.length)
 
                     } else {
+                        //If not handled by "handleByWhole()", a character is removed based on location of cursor
+                        //Else nothing is done since "handleByWhole" already deleted the character
                         if(!handleByWhole()) {
                             if (bigTxt.substring(0, mainBigText.selectionStart).isNotEmpty()) bigTxt = bigTxt.substring(0, mainBigText.selectionStart - 1) + bigTxt.substring(mainBigText.selectionEnd, bigTxt.length)
                             val pos = mainBigText.selectionStart
@@ -288,6 +314,7 @@ class MainActivity : AppCompatActivity() {
 
                 }
                 "=" -> {
+                    ///Calculates Expression and moves eqn to top
                     mainSmallText.text = mainBigText.text
                     val answer = evalExpression(mainBigText.text.toString())
                     mainBigText.setText("= $answer")
@@ -304,6 +331,7 @@ class MainActivity : AppCompatActivity() {
 
                 }
                 else -> {
+                    //All other buttons to be added to clicked
                     var bigTxt = mainBigText.text.toString()
                     if (bigTxt.contains("=")) {
                         mainSmallText.setText("")
@@ -320,6 +348,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    ///Evaluated expression as string and return value or syntax error if exists
     private fun evalExpression(exp: String): String{
         var expression = exp.replace("÷","/")
         expression = expression.replace("x","*")
@@ -343,6 +372,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    //Initializes animation of expanding calculator (works alongside motionlayout)
     private fun initExpandAnim(){
         bottomContainer.setTransitionListener(object: MotionLayout.TransitionListener{
             override fun onTransitionStarted(layout: MotionLayout?, start: Int, end: Int) {
@@ -451,6 +481,8 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
+    //Initialized drag action for top container (for expansion and retraction)
     private fun initDragAction(){
         mainMotion.setTransition(R.id.start,R.id.expanded_top)
         var isReversed = false
