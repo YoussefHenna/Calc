@@ -1,25 +1,23 @@
 package com.gooofystudios.calc
 
 import android.animation.ValueAnimator
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.DisplayMetrics
 import android.util.Log
-import android.view.MotionEvent
-import android.view.VelocityTracker
-import android.view.View
+import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.animation.addListener
 import androidx.core.view.setPadding
 import com.fathzer.soft.javaluator.DoubleEvaluator
 import kotlinx.android.synthetic.main.activity_main.*
-import java.lang.IllegalArgumentException
+import java.lang.IndexOutOfBoundsException
 import java.text.DecimalFormat
 
 
@@ -42,6 +40,7 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun initViews(){
+        mainBigText.setSelection(mainBigText.text.toString().length)
         darkenForeground.visibility = View.GONE
         switchButton.setOnClickListener {
             if(!isAnimating) {
@@ -57,60 +56,170 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        var before = ""
-        var lastBefore = ""
-        mainBigText.addTextChangedListener(object: TextWatcher{
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                before = s.toString()
-                if(before.length >= 4) {
-                    lastBefore = before.substring(before.length - 4,before.length)
-                }
-                else if(before.length  >= 3){
-                    lastBefore = before.substring(before.length - 3,before.length)
-                }
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mainBigText.showSoftInputOnFocus = false
+        }
+        mainBigText.requestFocus()
+        mainBigText.customSelectionActionModeCallback = object : ActionMode.Callback {
+            override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                return false
+            }
+            override fun onDestroyActionMode(mode: ActionMode?) {}
+            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                return false
             }
 
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-
+            override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+                return false
             }
+        }
 
-            override fun afterTextChanged(s: Editable?) {
-                if(mainBigText.lineCount > mainBigText.maxLines ){
-                    mainBigText.text = before
-                    Toast.makeText(this@MainActivity,"Max character count reached",Toast.LENGTH_SHORT).show()
-                }
-                var lastAfter = ""
-                if(s.toString().length >= 3) {
-                    lastAfter = s.toString().substring(s.toString().length - 3, s.toString().length)
-                }
-                else if(s.toString().length >= 2){
-                    lastAfter = s.toString().substring(s.toString().length - 2, s.toString().length)
 
-                }
-
-                ////Delete trig on logs as a whole
-                deleteWhole(lastBefore,lastAfter,before)
-            }
-        })
     }
 
-    private fun deleteWhole(lastBefore: String, lastAfter: String, before: String){
-        if(lastBefore.contains("sin(") && lastAfter.contains("sin") && !lastAfter.contains("sin(")){
-            mainBigText.text = before.substring(0,before.lastIndexOf("sin("))
+    private fun handleByWhole():Boolean{
+        try {
+            var bigTxt = mainBigText.text.toString()
+            var prevText = ""
+            var prevTextSmall = ""
+            var startIndex = 0
+            if (bigTxt.length > 4) {
+                prevText =
+                    bigTxt.substring(mainBigText.selectionStart - 4, mainBigText.selectionStart)
+                prevTextSmall =
+                    bigTxt.substring(mainBigText.selectionStart - 3, mainBigText.selectionStart)
+                startIndex = mainBigText.selectionStart - 4
+
+            } else {
+                prevText = bigTxt.substring(0, mainBigText.selectionStart)
+                prevTextSmall = bigTxt.substring(0, mainBigText.selectionStart)
+            }
+
+            if (prevText.contains("c")) {
+                var i = 0
+                while (prevText != "cos(") {
+                    if (i + mainBigText.selectionStart < bigTxt.length) prevText =
+                        bigTxt.substring(startIndex, mainBigText.selectionStart + i)
+                    var y = 0
+                    while (startIndex + y < mainBigText.selectionStart + i) {
+                        prevText = bigTxt.substring(startIndex + y, mainBigText.selectionStart + i)
+                        if (prevText == "cos(") {
+                            startIndex += y
+                            break
+                        }
+                        y++
+                    }
+                    i++
+                }
+                bigTxt = bigTxt.substring(0, startIndex) + bigTxt.substring(
+                    startIndex + 4,
+                    bigTxt.length
+                )
+                mainBigText.setText(bigTxt)
+                mainBigText.setSelection(startIndex)
+                return true
+            } else if (prevText.contains("s")) {
+                var i = 0
+                while (prevText != "sin(") {
+                    if (i + mainBigText.selectionStart < bigTxt.length) prevText =
+                        bigTxt.substring(startIndex, mainBigText.selectionStart + i)
+                    var y = 0
+                    while (startIndex + y < mainBigText.selectionStart + i) {
+                        prevText = bigTxt.substring(startIndex + y, mainBigText.selectionStart + i)
+                        if (prevText == "sin(") {
+                            startIndex += y
+                            break
+                        }
+                        y++
+                    }
+                    i++
+                }
+                bigTxt = bigTxt.substring(0, startIndex) + bigTxt.substring(
+                    startIndex + 4,
+                    bigTxt.length
+                )
+                mainBigText.setText(bigTxt)
+                mainBigText.setSelection(startIndex)
+                return true
+            } else if (prevText.contains("t")) {
+                var i = 0
+                while (prevText != "tan(") {
+                    if (i + mainBigText.selectionStart < bigTxt.length) prevText =
+                        bigTxt.substring(startIndex, mainBigText.selectionStart + i)
+                    var y = 0
+                    while (startIndex + y < mainBigText.selectionStart + i) {
+                        prevText = bigTxt.substring(startIndex + y, mainBigText.selectionStart + i)
+                        if (prevText == "tan(") {
+                            startIndex += y
+                            break
+                        }
+                        y++
+                    }
+                    i++
+                }
+                bigTxt = bigTxt.substring(0, startIndex) + bigTxt.substring(
+                    startIndex + 4,
+                    bigTxt.length
+                )
+                mainBigText.setText(bigTxt)
+                mainBigText.setSelection(startIndex)
+                return true
+            } else if (prevTextSmall.contains("l") && ((bigTxt.substring(bigTxt.indexOf(prevTextSmall), bigTxt.indexOf(prevTextSmall) + 2).contains("n")))
+            ) {
+                var i = 0
+                if (startIndex == mainBigText.selectionStart - 4) {
+                    startIndex = mainBigText.selectionStart - 3
+                }
+                while (prevText != "ln(") {
+                    if (i + mainBigText.selectionStart < bigTxt.length) prevText =
+                        bigTxt.substring(startIndex, mainBigText.selectionStart + i)
+                    var y = 0
+                    while (startIndex + y < mainBigText.selectionStart + i) {
+                        prevText = bigTxt.substring(startIndex + y, mainBigText.selectionStart + i)
+                        if (prevText == "ln(") {
+                            startIndex += y
+                            break
+                        }
+                        y++
+                    }
+                    i++
+                }
+                bigTxt = bigTxt.substring(0, startIndex) + bigTxt.substring(
+                    startIndex + 3,
+                    bigTxt.length
+                )
+                mainBigText.setText(bigTxt)
+                mainBigText.setSelection(startIndex)
+                return true
+            } else if (prevText.contains("l")) {
+                var i = 0
+                while (prevText != "log(") {
+                    if (i + mainBigText.selectionStart < bigTxt.length) prevText =
+                        bigTxt.substring(startIndex, mainBigText.selectionStart + i)
+                    var y = 0
+                    while (startIndex + y < mainBigText.selectionStart + i) {
+                        prevText = bigTxt.substring(startIndex + y, mainBigText.selectionStart + i)
+                        if (prevText == "log(") {
+                            startIndex += y
+                            break
+                        }
+                        y++
+                    }
+                    i++
+                }
+                bigTxt = bigTxt.substring(0, startIndex) + bigTxt.substring(
+                    startIndex + 4,
+                    bigTxt.length
+                )
+                mainBigText.setText(bigTxt)
+                mainBigText.setSelection(startIndex)
+                return true
+            }
+        }catch (e: IndexOutOfBoundsException){
+            return false
         }
-        else if(lastBefore.contains("cos(") && lastAfter.contains("cos") && !lastAfter.contains("cos(")){
-            mainBigText.text = before.substring(0,before.lastIndexOf("cos("))
-        }
-        else if(lastBefore.contains("tan(") && lastAfter.contains("tan") && !lastAfter.contains("tan(")){
-            mainBigText.text = before.substring(0,before.lastIndexOf("tan("))
-        }
-        else if(lastBefore.contains("log(") && lastAfter.contains("log") && !lastAfter.contains("log(")){
-            mainBigText.text = before.substring(0,before.lastIndexOf("log("))
-        }
-        else if(lastBefore.contains("ln(") && lastAfter.contains("ln") && !lastAfter.contains("ln(")){
-            mainBigText.text = before.substring(0,before.lastIndexOf("ln("))
-        }
+
+        return false
     }
 
     public fun onButtonClicked(v: View){
@@ -121,41 +230,68 @@ class MainActivity : AppCompatActivity() {
             if (bigTxt.contains("=")) {
                 bigTxt = bigTxt.substring(bigTxt.indexOf("=") + 1)
                 if (bigTxt.isNotEmpty()) bigTxt = bigTxt.substring(0, bigTxt.length)
-                mainBigText.text = bigTxt
+                mainBigText.setText(bigTxt)
+                bigTxt = mainBigText.text.toString()
+                mainBigText.setSelection(bigTxt.length)
+
             }
-            val newTxt = mainBigText.text.toString() + tv.text.toString()
-            mainBigText.text = newTxt
+            val pos = mainBigText.selectionStart
+            val newTxt = bigTxt.substring(0,mainBigText.selectionStart) + text + bigTxt.substring(mainBigText.selectionEnd,bigTxt.length)
+            mainBigText.setText(newTxt)
+            mainBigText.setSelection(pos+1)
 
         }
         else if(text == "sin" || text == "cos" || text == "tan" || text == "log" || text == "ln"){
             var bigTxt = mainBigText.text.toString()
             if (bigTxt.contains("=")) {
-                mainSmallText.text = ""
-                mainBigText.text = ""
+                mainSmallText.setText("")
+                mainBigText.setText("")
+                bigTxt = mainBigText.text.toString()
             }
-            val newTxt = mainBigText.text.toString() + text + "("
-            mainBigText.text = newTxt
+            val pos = mainBigText.selectionStart
+            val newTxt = bigTxt.substring(0,mainBigText.selectionStart) + text + "(" + bigTxt.substring(mainBigText.selectionEnd,bigTxt.length)
+            mainBigText.setText(newTxt)
+            if(text != "ln") {
+                mainBigText.setSelection(pos + 4)
+            }
+            else{
+                mainBigText.setSelection(pos + 3)
+
+            }
         }
         else {
             when (text) {
                 "C" -> {
-                    mainSmallText.text = ""
-                    mainBigText.text = ""
+                    mainSmallText.setText("")
+                    mainBigText.setText("")
                 }
                 "Del" -> {
                     var bigTxt = mainBigText.text.toString()
                     if (bigTxt.contains("=")) {
-                        mainSmallText.text = ""
-                        mainBigText.text = ""
+                        mainSmallText.setText("")
+                        mainBigText.setText("")
+                        bigTxt = mainBigText.text.toString()
+                        mainBigText.setSelection(bigTxt.length)
+
                     } else {
-                        if (bigTxt.isNotEmpty()) bigTxt = bigTxt.substring(0, bigTxt.length - 1)
-                        mainBigText.text = bigTxt
+                        if(!handleByWhole()) {
+                            if (bigTxt.substring(0, mainBigText.selectionStart).isNotEmpty()) bigTxt = bigTxt.substring(0, mainBigText.selectionStart - 1) + bigTxt.substring(mainBigText.selectionEnd, bigTxt.length)
+                            val pos = mainBigText.selectionStart
+                            mainBigText.setText(bigTxt)
+                            bigTxt = mainBigText.text.toString()
+                            if (pos - 1 >= 0) {
+                                mainBigText.setSelection(pos - 1)
+                            }
+                        }
+
                     }
+
                 }
                 "=" -> {
                     mainSmallText.text = mainBigText.text
                     val answer = evalExpression(mainBigText.text.toString())
-                    mainBigText.text = "= $answer"
+                    mainBigText.setText("= $answer")
+                    mainBigText.setSelection(mainBigText.text.toString().length)
 
                 }
                 "2nd" -> {
@@ -170,11 +306,14 @@ class MainActivity : AppCompatActivity() {
                 else -> {
                     var bigTxt = mainBigText.text.toString()
                     if (bigTxt.contains("=")) {
-                        mainSmallText.text = ""
-                        mainBigText.text = ""
+                        mainSmallText.setText("")
+                        mainBigText.setText("")
+                        bigTxt = mainBigText.text.toString()
                     }
-                    val newTxt = mainBigText.text.toString() + text
-                    mainBigText.text = newTxt
+                    val pos = mainBigText.selectionStart
+                    val newTxt = bigTxt.substring(0,mainBigText.selectionStart) + text + bigTxt.substring(mainBigText.selectionEnd,bigTxt.length)
+                    mainBigText.setText(newTxt)
+                    mainBigText.setSelection(pos+1)
                 }
             }
         }
