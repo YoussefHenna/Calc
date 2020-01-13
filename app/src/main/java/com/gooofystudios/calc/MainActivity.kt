@@ -1,11 +1,10 @@
 package com.gooofystudios.calc
 
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
@@ -14,10 +13,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.animation.addListener
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.setPadding
-import com.fathzer.soft.javaluator.DoubleEvaluator
 import kotlinx.android.synthetic.main.activity_main.*
-import java.lang.IndexOutOfBoundsException
 import java.text.DecimalFormat
 
 
@@ -35,6 +33,18 @@ class MainActivity : AppCompatActivity() {
 
 
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if(appInfoTv.alpha == 0.0f) {
+            val anim = ValueAnimator.ofFloat(0.0f, 1.0f)
+            anim.addUpdateListener {
+                appInfoTv.alpha = it.animatedValue as Float
+            }
+            anim.duration = 100
+            anim.start()
+        }
     }
 
 
@@ -313,6 +323,56 @@ class MainActivity : AppCompatActivity() {
                     }
 
                 }
+                "√x" ->{
+                    var bigTxt = mainBigText.text.toString()
+                    if (bigTxt.contains("=")) {
+                        mainSmallText.setText("")
+                        mainBigText.setText("")
+                        bigTxt = mainBigText.text.toString()
+                    }
+                    val pos = mainBigText.selectionStart
+                    val newTxt = bigTxt.substring(0,mainBigText.selectionStart) + "√" + bigTxt.substring(mainBigText.selectionEnd,bigTxt.length)
+                    mainBigText.setText(newTxt)
+                    mainBigText.setSelection(pos+1)
+
+                }
+                "!X" ->{
+                    var bigTxt = mainBigText.text.toString()
+                    if (bigTxt.contains("=")) {
+                        mainSmallText.setText("")
+                        mainBigText.setText("")
+                        bigTxt = mainBigText.text.toString()
+                    }
+                    val pos = mainBigText.selectionStart
+                    val newTxt = bigTxt.substring(0,mainBigText.selectionStart) + "!" + bigTxt.substring(mainBigText.selectionEnd,bigTxt.length)
+                    mainBigText.setText(newTxt)
+                    mainBigText.setSelection(pos+1)
+
+                }
+                "1/x" ->{
+                    var bigTxt = mainBigText.text.toString()
+                    if (bigTxt.contains("=")) {
+                        mainSmallText.setText("")
+                        mainBigText.setText("")
+                        bigTxt = mainBigText.text.toString()
+                    }
+                    val pos = mainBigText.selectionStart
+                    val newTxt = bigTxt.substring(0,mainBigText.selectionStart) + "(1/)" + bigTxt.substring(mainBigText.selectionEnd,bigTxt.length)
+                    mainBigText.setText(newTxt)
+                    mainBigText.setSelection(pos+3)
+                }
+                "xⁿ" ->{
+                    var bigTxt = mainBigText.text.toString()
+                    if (bigTxt.contains("=")) {
+                        mainSmallText.setText("")
+                        mainBigText.setText("")
+                        bigTxt = mainBigText.text.toString()
+                    }
+                    val pos = mainBigText.selectionStart
+                    val newTxt = bigTxt.substring(0,mainBigText.selectionStart) + "()^()" + bigTxt.substring(mainBigText.selectionEnd,bigTxt.length)
+                    mainBigText.setText(newTxt)
+                    mainBigText.setSelection(pos+1)
+                }
                 "=" -> {
                     ///Calculates Expression and moves eqn to top
                     mainSmallText.text = mainBigText.text
@@ -328,6 +388,20 @@ class MainActivity : AppCompatActivity() {
 
                 }
                 "rad" ->{
+
+                }
+                "App Info" ->{
+                    val anim = ValueAnimator.ofFloat(1.0f,0.0f)
+                    anim.addUpdateListener {
+                        tv.alpha = it.animatedValue as Float
+                    }
+                    anim.duration = 100
+                    anim.start()
+                    Handler().postDelayed({
+                        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, appInfo, "appInfoTitle")
+                        val intent = Intent(this@MainActivity,AppInfoActivity::class.java)
+                        startActivity(intent,options.toBundle())
+                    },100)
 
                 }
                 else -> {
@@ -352,10 +426,14 @@ class MainActivity : AppCompatActivity() {
     private fun evalExpression(exp: String): String{
         var expression = exp.replace("÷","/")
         expression = expression.replace("x","*")
+        expression = expression.replace("π","pi")
+        expression = addBrackets("√",expression)
+        expression = addBrackets("!",expression)
+        Log.e("Evaluating: ",expression)
 
 
 
-        val evaluator = DoubleEvaluator()
+        val evaluator = CustomDoubleEvaluator()
         try {
             val answer = evaluator.evaluate(expression)
 
@@ -368,6 +446,43 @@ class MainActivity : AppCompatActivity() {
             }
         }catch (e: IllegalArgumentException){
             return "Syntax Error"
+        }
+
+    }
+
+    ///Adds brackets to surround numbers after a given symbol in order for math evaluator to understand the input (uses recursion)
+    //Ex: !5 is converted to !(5)
+    private fun addBrackets(symbol: String, exp: String): String{
+        val index = exp.indexOf(symbol)
+        if(index == -1 || exp.isEmpty()){
+            return exp
+        }
+        else if(index+1 < exp.length){
+            var numbersAfter = 0
+            if(exp[index+1].toString() != "(") {
+                for (char in exp.substring(index + 1, exp.length)) {
+                    //Includes letters of trig and log in order to include them in eqn is possible
+                    if (char.toString() == "." || char.toString() == "s" || char.toString() == "i" || char.toString() == "n" || char.toString() == "c" || char.toString() == "o" || char.toString() == "t" || char.toString() == "a" || char.toString() == "n" || char.toString() == "l" || char.toString() == "g" || char.toString() == "(" || char.toString() == ")") {
+                        numbersAfter++
+                        continue
+                    }
+                    try {
+                        char.toString().toDouble()
+                        numbersAfter++
+                    } catch (e: NumberFormatException) {
+                        break
+                    }
+                }
+                var newString = exp.substring(0, index + 1) + "(" + exp.substring(index + 1, index + 1 + numbersAfter) + ")"
+                return newString + addBrackets(symbol, exp.substring(index + 1 + numbersAfter, exp.length))
+            }
+            else{
+                return exp.substring(0,index+1) + addBrackets(symbol, exp.substring(index + 1 + numbersAfter, exp.length))
+
+            }
+        }
+        else{
+            return ""
         }
 
     }
@@ -503,8 +618,8 @@ class MainActivity : AppCompatActivity() {
                         ///Velocity for high for easier tracking of speed
                         val changeHigh = velocityTracker!!.getYVelocity(event.getPointerId(event.actionIndex)) * 0.005
                         val speed = if (changeHigh < 0) changeHigh * -1 else changeHigh
-                        //If high speed, do animation automatically
-                        if (speed > 2.5) {
+                        //If high speed, do animation automatically (disabled for the time being - feels unnatural)
+                        if (speed > 2.5 && false) {
                             if (changeHigh < 0) {
                                 mainMotion.transitionToStart()
                                 isTouchEnabled = false;
@@ -590,13 +705,12 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+
+    //Coverts values given in dp to px - to simplify number usage between code and layout xml
     fun Int.toPx(): Int{
         val displayMetrics: DisplayMetrics = resources.displayMetrics
         return Math.round(this * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT))
     }
-    fun Float.toPx(): Int{
-        val displayMetrics: DisplayMetrics = resources.displayMetrics
-        return Math.round(this * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT))
-    }
+
 
 }

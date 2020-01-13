@@ -28,27 +28,28 @@
             android:weightSum="5"
             android:orientation="horizontal">
 
-            <TextView
-                android:maxLines="1"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/appInfo"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:textColor="@color/transWhite"
-                android:gravity="center"
-                android:onClick="onButtonClicked"
-                android:textSize="@dimen/button_text_size"
-                android:text="2nd"/>
+                android:background="@color/colorAccent"
+                android:layout_weight="2"
+                android:transitionName="appInfoTitle">
 
             <TextView
+                android:id="@+id/appInfoTv"
                 android:maxLines="1"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:textColor="@color/transWhite"
-                android:gravity="center"
                 android:onClick="onButtonClicked"
-                android:textSize="@dimen/button_text_size"
-                android:text="deg"/>
+                android:textColor="@android:color/white"
+                android:gravity="center"
+                android:textSize="20dp"
+                android:text="App Info"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+
 
             <TextView
                 android:maxLines="1"
@@ -233,7 +234,7 @@
                 android:gravity="center"
                 android:onClick="onButtonClicked"
                 android:textSize="@dimen/button_text_size"
-                android:text="X!"/>
+                android:text="!X"/>
 
             <TextView
                 android:maxLines="1"
@@ -523,12 +524,26 @@
             android:layout_height="match_parent"
             app:layout_constraintTop_toTopOf="parent">
 
+
+
             <FrameLayout
                 android:id="@+id/frameLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/top_gradient"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rad"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="16dp"
+                android:alpha="0.5"
+                android:textSize="20dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:textColor="@android:color/white"/>
 
 
             <EditText
@@ -546,7 +561,7 @@
                 android:ellipsize="end"
                 app:layout_constraintBottom_toBottomOf="parent"
                 android:layout_marginEnd="50dp"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="50dp"
                 app:layout_constraintEnd_toEndOf="parent" />
 
             <EditText
