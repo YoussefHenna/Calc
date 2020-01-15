@@ -1,6 +1,7 @@
 package com.gooofystudios.calc
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.core.animation.addListener
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.setPadding
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.StringBuilder
 import java.text.DecimalFormat
 
 
@@ -63,7 +65,7 @@ class MainActivity : AppCompatActivity() {
                 isAnimating = true;
                 Handler().postDelayed({
                     isAnimating = false
-                },500)
+                },600)
             }
         }
 
@@ -429,8 +431,25 @@ class MainActivity : AppCompatActivity() {
         expression = expression.replace("π","pi")
         expression = addBrackets("√",expression)
         expression = addBrackets("!",expression)
+        expression = addNeccMultiply(expression)
+
         Log.e("Evaluating: ",expression)
 
+
+        //Used for showing formatted math expression
+        var mathExpression = exp
+        mathExpression = mathExpression.replace("x","*")
+        mathExpression = addCurly("√",mathExpression)
+        mathExpression = replaceBracketWithCurly("√",mathExpression)
+        mathExpression = mathExpression.replace("√","\\sqrt")
+
+        Log.e("INDEX",mathExpression.indexOf("^").toString())
+
+        mathExpression = replaceBracketWithCurly("^",mathExpression)
+
+        ///NOT WORKING FOR ()symbol()
+
+        Log.e("EXP",mathExpression)
 
 
         val evaluator = CustomDoubleEvaluator()
@@ -439,10 +458,19 @@ class MainActivity : AppCompatActivity() {
 
 
             if (answer.toInt().toDouble() == answer) {
+                mathView.text = "$$$mathExpression = ${answer.toInt()}$$"
                 return answer.toInt().toString()
             } else {
-                val df = DecimalFormat("0.00")
-                return df.format(answer)
+                if(answer.toString().contains(".")){
+                    if(answer.toString().length > 12){
+                        val df = DecimalFormat("0.00000000")
+                        mathView.text = "$$$mathExpression = ${df.format(answer)}$$"
+                        return df.format(answer)
+
+                    }
+                }
+                mathView.text = "$$$mathExpression = ${answer}$$"
+                return answer.toString()
             }
         }catch (e: IllegalArgumentException){
             return "Syntax Error"
@@ -485,6 +513,104 @@ class MainActivity : AppCompatActivity() {
             return ""
         }
 
+    }
+
+    private fun addCurly(symbol: String, exp: String): String{
+        val index = exp.indexOf(symbol)
+        if(index == -1 || exp.isEmpty()){
+            return exp
+        }
+        else if(index+1 < exp.length){
+            var numbersAfter = 0
+            if(exp[index+1].toString() != "(") {
+                for (char in exp.substring(index + 1, exp.length)) {
+                    //Includes letters of trig and log in order to include them in eqn is possible
+                    if (char.toString() == "." || char.toString() == "s" || char.toString() == "i" || char.toString() == "n" || char.toString() == "c" || char.toString() == "o" || char.toString() == "t" || char.toString() == "a" || char.toString() == "n" || char.toString() == "l" || char.toString() == "g" || char.toString() == "(" || char.toString() == ")") {
+                        numbersAfter++
+                        continue
+                    }
+                    try {
+                        char.toString().toDouble()
+                        numbersAfter++
+                    } catch (e: NumberFormatException) {
+                        break
+                    }
+                }
+                var newString = exp.substring(0, index + 1) + "{" + exp.substring(index + 1, index + 1 + numbersAfter) + "}"
+                return newString + addBrackets(symbol, exp.substring(index + 1 + numbersAfter, exp.length))
+            }
+            else{
+                return exp.substring(0,index+1) + addBrackets(symbol, exp.substring(index + 1 + numbersAfter, exp.length))
+
+            }
+        }
+        else{
+            return ""
+        }
+
+    }
+
+    private fun replaceBracketWithCurly(symbol: String, exp: String):String{
+        val index = exp.indexOf(symbol)
+        if(index == -1 || exp.isEmpty()){
+            return exp
+        }
+        else if(index+1 < exp.length){
+            if(exp[index+1].toString() == "(") {
+                val sub = exp.substring(index+1)
+                val nextBracket = sub.indexOf(")")
+                return exp.substring(0, index+1) + "{" + exp.substring(index+2,nextBracket+1) + "}" + replaceBracketWithCurly(symbol,exp.substring(nextBracket+2) )
+            }
+            else{
+                return exp.substring(0,index+1) + replaceBracketWithCurly(symbol,exp.substring(index+1))
+
+            }
+        }
+        else {
+            return ""
+        }
+    }
+
+
+
+
+    //Adds neccessary times symbol in certain parts of equation for evaluator to understand
+    //Ex 2π is converted to 2 * π
+    private fun addNeccMultiply(exp: String): String{
+        var indicesToAdd = mutableListOf<Int>()
+        for(i in exp.indices){
+            val char = exp[i]
+            //All conditions in which a time should be added
+            if(char.toString() == "s" || char.toString() == "c" || char.toString() == "t" || char.toString() == "e" || char.toString() == "l" || (char.toString() == "(" && (i-1 >= 0) && isNumber(exp[i-1].toString()))  || char.toString() == "√" || char.toString() == "p"){
+                //Only add if there is something before it
+                if(i - 1 >= 0) {
+                    val c = exp[i-1]
+                    if (c.toString() != "+" && c.toString() != "%" && c.toString() != "/" && c.toString() != "*" && c.toString() != "-") {
+                        indicesToAdd.add(i)
+                    }
+                }
+            }
+        }
+        val builder = StringBuilder(exp)
+        var currentOffset = 0
+        for(i in indicesToAdd){
+            builder.insert(i + currentOffset,"*")
+            currentOffset++
+        }
+
+        return builder.toString()
+    }
+
+
+    //Checks if string is a number
+    private fun isNumber(s: String): Boolean{
+        try{
+            s.toDouble()
+        }catch (e: java.lang.NumberFormatException){
+            return false
+        }
+
+        return true
     }
 
     //Initializes animation of expanding calculator (works alongside motionlayout)
@@ -598,6 +724,7 @@ class MainActivity : AppCompatActivity() {
 
 
     //Initialized drag action for top container (for expansion and retraction)
+    @SuppressLint("ClickableViewAccessibility")
     private fun initDragAction(){
         mainMotion.setTransition(R.id.start,R.id.expanded_top)
         var isReversed = false

@@ -9,6 +9,8 @@
     app:layoutDescription="@xml/activity_main_scene">
 
 
+
+
     <androidx.constraintlayout.motion.widget.MotionLayout
         android:id="@+id/bottomContainer"
         android:layout_width="match_parent"
@@ -602,6 +604,32 @@
 
 
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mathViewForground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <io.github.kexanie.library.MathView
+            android:id="@+id/mathView"
+            android:layout_width="match_parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_height="wrap_content"
+            app:engine="MathJax"
+            >
+        </io.github.kexanie.library.MathView>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.5"
+            android:background="@android:color/black">
+        </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 
 </androidx.constraintlayout.motion.widget.MotionLayout>
