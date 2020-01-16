@@ -2,10 +2,9 @@ package com.gooofystudios.calc
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
+import android.os.*
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
@@ -17,7 +16,6 @@ import androidx.core.animation.addListener
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.setPadding
 import kotlinx.android.synthetic.main.activity_main.*
-import java.lang.StringBuilder
 import java.text.DecimalFormat
 
 
@@ -52,7 +50,55 @@ class MainActivity : AppCompatActivity() {
 
 
     //Initialized default values and click listeners (instead of cramming "onCreate()")
+    @SuppressLint("ClickableViewAccessibility")
     private fun initViews(){
+        window.setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+        )
+
+        mathView.config(
+            "MathJax.Hub.Config({\n"+
+                    "  CommonHTML: { linebreaks: { automatic: true } },\n"+
+                    "  \"HTML-CSS\": { linebreaks: { automatic: true } },\n"+
+                    "         SVG: { linebreaks: { automatic: true } }\n"+
+                    "});");
+
+        equalButton.setOnClickListener {
+            ///Calculates Expression and moves eqn to top
+            if(!mainBigText.text.contains("=")) {
+                mainSmallText.text = mainBigText.text
+                val answer = evalExpression(mainBigText.text.toString())
+                mainBigText.setText("= $answer")
+                mainBigText.setSelection(mainBigText.text.toString().length)
+            }
+        }
+        equalButton.setOnLongClickListener {
+            val v = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createOneShot(50, 100))
+            } else {
+                v.vibrate(50)
+            }
+            if(!mainBigText.text.contains("=")) {
+                mainSmallText.text = mainBigText.text
+                val answer = evalExpression(mainBigText.text.toString())
+                mainBigText.setText("= $answer")
+                mainBigText.setSelection(mainBigText.text.toString().length)
+            }
+            mainMotion.transitionToState(R.id.math_visible)
+
+            true
+        }
+
+        equalButton.setOnTouchListener { v, event ->
+
+            if(event.action == MotionEvent.ACTION_UP){
+                mainMotion.transitionToState(R.id.start)
+
+            }
+            false
+        }
         mainBigText.setSelection(mainBigText.text.toString().length)
         darkenForeground.visibility = View.GONE
         switchButton.setOnClickListener {
@@ -72,6 +118,7 @@ class MainActivity : AppCompatActivity() {
         //Disables keyboard
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mainBigText.showSoftInputOnFocus = false
+
         }
         mainBigText.requestFocus()
 
@@ -250,6 +297,9 @@ class MainActivity : AppCompatActivity() {
      */
 
 
+    public fun onEqualLongClick(v:View){
+
+    }
     //Click listener for all calculator Buttons
     public fun onButtonClicked(v: View){
         val tv = v as TextView
@@ -375,14 +425,7 @@ class MainActivity : AppCompatActivity() {
                     mainBigText.setText(newTxt)
                     mainBigText.setSelection(pos+1)
                 }
-                "=" -> {
-                    ///Calculates Expression and moves eqn to top
-                    mainSmallText.text = mainBigText.text
-                    val answer = evalExpression(mainBigText.text.toString())
-                    mainBigText.setText("= $answer")
-                    mainBigText.setSelection(mainBigText.text.toString().length)
 
-                }
                 "2nd" -> {
 
                 }
@@ -439,15 +482,16 @@ class MainActivity : AppCompatActivity() {
         //Used for showing formatted math expression
         var mathExpression = exp
         mathExpression = mathExpression.replace("x","*")
-        mathExpression = addCurly("√",mathExpression)
-        mathExpression = replaceBracketWithCurly("√",mathExpression)
+        mathExpression = addBrackets("√",mathExpression)
         mathExpression = mathExpression.replace("√","\\sqrt")
-
-        Log.e("INDEX",mathExpression.indexOf("^").toString())
-
+        mathExpression = mathExpression.replace("÷","/")
+        mathExpression = convertToFracFormat(mathExpression)
+        mathExpression = mathExpression.replace("*","·")
+        mathExpression = mathExpression.replace("/","÷")
+        mathExpression = replaceBracketWithCurly("√",mathExpression)
         mathExpression = replaceBracketWithCurly("^",mathExpression)
 
-        ///NOT WORKING FOR ()symbol()
+
 
         Log.e("EXP",mathExpression)
 
@@ -463,7 +507,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 if(answer.toString().contains(".")){
                     if(answer.toString().length > 12){
-                        val df = DecimalFormat("0.00000000")
+                        val df = DecimalFormat("0.0000000")
                         mathView.text = "$$$mathExpression = ${df.format(answer)}$$"
                         return df.format(answer)
 
@@ -559,7 +603,7 @@ class MainActivity : AppCompatActivity() {
             if(exp[index+1].toString() == "(") {
                 val sub = exp.substring(index+1)
                 val nextBracket = sub.indexOf(")")
-                return exp.substring(0, index+1) + "{" + exp.substring(index+2,nextBracket+1) + "}" + replaceBracketWithCurly(symbol,exp.substring(nextBracket+2) )
+                return exp.substring(0, index+1) + "{" + sub.substring(1,nextBracket) + "}" + replaceBracketWithCurly(symbol,sub.substring(nextBracket+1) )
             }
             else{
                 return exp.substring(0,index+1) + replaceBracketWithCurly(symbol,exp.substring(index+1))
@@ -569,6 +613,107 @@ class MainActivity : AppCompatActivity() {
         else {
             return ""
         }
+    }
+
+
+    private fun convertToFracFormat(exp: String): String{
+        val indicesToAdd = mutableListOf<Pair<Pair<Int,Int>,Pair<String,String>>>()
+        var prev = -1
+        for(i in exp.indices){
+            val c = exp[i]
+            if(c.toString() == "/"){
+                var before = ""
+                var after = ""
+                var onlyExitIfBrack = false
+                var onlyExitIfBrackForward = false
+
+                if(i-1 >= 0 && exp[i-1].toString() == ")"){
+                    onlyExitIfBrack = true
+                }
+                if(i+1 < exp.length && exp[i+1].toString() == "("){
+                    onlyExitIfBrackForward = true
+                }
+                var inOtherBrack = 0
+                for(y in i-1 downTo 0){
+                    if(onlyExitIfBrack){
+                        if(exp[y].toString() == "("){
+                            if(inOtherBrack == 0) {
+                                break
+                            }
+                            else{
+                                inOtherBrack--
+                            }
+                        }
+                        else if(exp[y].toString() == ")"){
+                            inOtherBrack++
+                        }
+                    }
+                    else {
+                        if (exp[y].toString() == "+" || exp[y].toString() == "-" || exp[y].toString() == "*" || exp[y].toString() == "/" || exp[y].toString() == "%" || exp[y].toString() == "("){
+                            break
+                        }
+                    }
+                    before += exp[y].toString()
+                }
+                before = before.reversed()
+
+                var inOtherBrackForward = 0
+
+                for(y in i+1 until exp.length){
+                    if(onlyExitIfBrackForward){
+                        if(exp[y].toString() == ")"){
+                            if(inOtherBrackForward == 0) {
+                                break
+                            }
+                            else{
+                                inOtherBrackForward--
+                            }
+                        }
+                        else if(exp[y].toString() == "("){
+                            inOtherBrackForward++
+                        }
+                    }
+                    else {
+                        if (exp[y].toString() == "+" || exp[y].toString() == "-" || exp[y].toString() == "*" || exp[y].toString() == "/" || exp[y].toString() == "%" || exp[y].toString() == ")"){
+                            break
+                        }
+                    }
+                    after += exp[y].toString()
+
+
+                }
+
+
+                if(prev!= -1){
+
+                    if(prev != i-before.length+1){
+                        indicesToAdd.add(Pair(Pair(i - before.length, i + after.length + 1), Pair(before, after)))
+                        prev = i + after.length + 1
+
+                    }
+                }
+                else {
+                    indicesToAdd.add(Pair(Pair(i - before.length, i + after.length + 1), Pair(before, after)))
+                    prev = i + after.length + 1
+                }
+
+
+
+
+            }
+        }
+
+        val builder = StringBuilder(exp)
+        var currentOffset = 0
+        for(pair in indicesToAdd){
+            val indices = pair.first
+            val text = pair.second
+            builder.delete(indices.first+currentOffset,indices.second+currentOffset)
+            builder.insert(indices.first + currentOffset,"\\frac{${text.first}}{${text.second}}")
+            currentOffset += 8
+        }
+
+        return builder.toString()
     }
 
 
@@ -586,6 +731,7 @@ class MainActivity : AppCompatActivity() {
                 if(i - 1 >= 0) {
                     val c = exp[i-1]
                     if (c.toString() != "+" && c.toString() != "%" && c.toString() != "/" && c.toString() != "*" && c.toString() != "-") {
+                        if((i-1 >= 0) && (isNumber(exp[i-1].toString()) || exp[i-1].toString() == ")"))
                         indicesToAdd.add(i)
                     }
                 }
