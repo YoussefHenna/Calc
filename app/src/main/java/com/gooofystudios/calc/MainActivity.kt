@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.*
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
@@ -21,8 +23,9 @@ import java.text.DecimalFormat
 
 class MainActivity : AppCompatActivity() {
 
-    private var velocityTracker: VelocityTracker? = null;
-    private var isAnimating = false;
+    private var velocityTracker: VelocityTracker? = null
+    private var isAnimating = false
+    private var isCircleAnimating = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,10 +69,12 @@ class MainActivity : AppCompatActivity() {
         equalButton.setOnClickListener {
             ///Calculates Expression and moves eqn to top
             if(!mainBigText.text.contains("=")) {
-                mainSmallText.text = mainBigText.text
                 val answer = evalExpression(mainBigText.text.toString())
-                mainBigText.setText("= $answer")
-                mainBigText.setSelection(mainBigText.text.toString().length)
+                if(!answer.isNullOrEmpty()) {
+                    mainSmallText.text = mainBigText.text
+                    mainBigText.setText("= $answer")
+                    mainBigText.setSelection(mainBigText.text.toString().length)
+                }
             }
         }
         equalButton.setOnLongClickListener {
@@ -81,10 +86,12 @@ class MainActivity : AppCompatActivity() {
                 v.vibrate(50)
             }
             if(!mainBigText.text.contains("=")) {
-                mainSmallText.text = mainBigText.text
                 val answer = evalExpression(mainBigText.text.toString())
-                mainBigText.setText("= $answer")
-                mainBigText.setSelection(mainBigText.text.toString().length)
+                if(!answer.isNullOrEmpty()) {
+                    mainSmallText.text = mainBigText.text
+                    mainBigText.setText("= $answer")
+                    mainBigText.setSelection(mainBigText.text.toString().length)
+                }
             }
             mainMotion.transitionToState(R.id.math_visible)
 
@@ -136,6 +143,18 @@ class MainActivity : AppCompatActivity() {
                 return false
             }
         }
+
+        mainBigText.addTextChangedListener(object: TextWatcher{
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                mainBigText.error = null
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+        })
 
 
     }
@@ -305,6 +324,8 @@ class MainActivity : AppCompatActivity() {
         val tv = v as TextView
         val text = tv.text.toString()
 
+
+
         //Operations' buttons handled separately in order to enable calculations using the answer of prev calculation
         if(text == "÷" || text == "x" || text == "%" || text == "-" || text == "+"){
             var bigTxt = mainBigText.text.toString()
@@ -345,9 +366,36 @@ class MainActivity : AppCompatActivity() {
         else {
             when (text) {
                 "C" -> {
-                    ///Clears calc
-                    mainSmallText.setText("")
-                    mainBigText.setText("")
+                    ///Clears calc with animations
+                    val circleAnim = ValueAnimator.ofInt(0,1000.toPx())
+                    circleAnim.addUpdateListener {
+                        clearCircle.layoutParams.width = it.animatedValue as Int
+                        clearCircle.layoutParams.height = it.animatedValue as Int
+                        clearCircle.requestLayout()
+                    }
+                    circleAnim.duration = 300
+                    if(!isCircleAnimating) {
+                        circleAnim.start()
+                        isCircleAnimating = true
+                    }
+                    circleAnim.addListener(onEnd= {
+                        mainSmallText.setText("")
+                        mainBigText.setText("")
+                        val circleAnim2 = ValueAnimator.ofInt(1000.toPx(),0.toPx())
+                        circleAnim2.addUpdateListener {
+                            clearCircle.layoutParams.width = it.animatedValue as Int
+                            clearCircle.layoutParams.height = it.animatedValue as Int
+                            clearCircle.requestLayout()
+                        }
+                        circleAnim2.duration = 300
+                        circleAnim2.addListener(onEnd = {
+                            isCircleAnimating = false
+                        })
+
+                        circleAnim2.start()
+
+                    })
+
                 }
                 "Del" -> {
                     //Deletes character
@@ -517,7 +565,8 @@ class MainActivity : AppCompatActivity() {
                 return answer.toString()
             }
         }catch (e: IllegalArgumentException){
-            return "Syntax Error"
+            mainBigText.error =  "Syntax Error"
+            return ""
         }
 
     }
@@ -770,11 +819,11 @@ class MainActivity : AppCompatActivity() {
                     hidden4.alpha = 0.0f
                     hidden5.alpha = 0.0f
 
-                    hidden1.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,0.0f)
-                    hidden2.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,0.0f)
-                    hidden3.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,0.0f)
-                    hidden4.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,0.0f)
-                    hidden5.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,0.0f)
+                    hidden1.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,0.0f)
+                    hidden2.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,0.0f)
+                    hidden3.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,0.0f)
+                    hidden4.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,0.0f)
+                    hidden5.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,0.0f)
 
 
                     hidden1.visibility = View.VISIBLE
@@ -791,11 +840,11 @@ class MainActivity : AppCompatActivity() {
                         hidden3.alpha = it.animatedValue as Float
                         hidden4.alpha = it.animatedValue as Float
                         hidden5.alpha = it.animatedValue as Float
-                        hidden1.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,it.animatedValue as Float)
-                        hidden2.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,it.animatedValue as Float)
-                        hidden3.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,it.animatedValue as Float)
-                        hidden4.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,it.animatedValue as Float)
-                        hidden5.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,it.animatedValue as Float)
+                        hidden1.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,it.animatedValue as Float)
+                        hidden2.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,it.animatedValue as Float)
+                        hidden3.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,it.animatedValue as Float)
+                        hidden4.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,it.animatedValue as Float)
+                        hidden5.layoutParams = LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.MATCH_PARENT,it.animatedValue as Float)
 
 
                     }
