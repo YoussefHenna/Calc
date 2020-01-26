@@ -21,7 +21,7 @@
         <Constraint
             android:id="@+id/topContainer"
             android:layout_width="match_parent"
-            android:layout_height="450dp"
+            android:layout_height="600dp"
             motion:layout_constraintTop_toTopOf="parent" />
         <Constraint
             android:id="@+id/darkenForeground"
@@ -33,16 +33,5 @@
     <Transition
         motion:constraintSetStart="@+id/start"
         motion:constraintSetEnd="@+id/expanded_top"
-        motion:duration="200" />
-    <ConstraintSet android:id="@+id/math_visible" >
-        <Constraint
-            android:id="@+id/mathViewForground"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible" />
-    </ConstraintSet>
-    <Transition
-        motion:constraintSetStart="@+id/start"
-        motion:constraintSetEnd="@+id/math_visible"
-        motion:duration="200" />
+        motion:duration="300" />
 </MotionScene>

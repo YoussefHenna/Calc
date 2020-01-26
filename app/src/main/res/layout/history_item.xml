@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <TextView
+        android:id="@+id/answer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:layout_marginEnd="20dp"
+        android:background="@android:color/transparent"
+        android:scrollHorizontally="true"
+        android:textColor="@android:color/white"
+        android:textSize="35dp"
+        android:gravity="end|center_vertical"
+        android:ellipsize="marquee"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/expression"
+        android:layout_width="match_parent"
+        android:background="@android:color/transparent"
+        android:singleLine="true"
+        android:layout_marginEnd="20dp"
+        android:ellipsize="marquee"
+        android:scrollHorizontally="true"
+        android:layout_height="70dp"
+        android:gravity="end|bottom"
+        android:alpha="0.5"
+        android:textColor="@android:color/white"
+        android:textSize="25dp"
+        app:layout_constraintBottom_toTopOf="@+id/answer"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

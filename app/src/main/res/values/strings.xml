@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Calc</string>
+    <string name="support_app_text">If you are enjoying Calc, please consider supporting the app by a small purchase.\n\nAny of the below purchases will also grant you:\n\t-A Golden equal button
+    \n\nNOTE: Multiple purchases will not grant any additional perks over a single purchase. In addition, more expensive purchases do no grant any additional perks over the least expensive.
+    \nChoose the amount you feel best suited.</string>
+
 </resources>

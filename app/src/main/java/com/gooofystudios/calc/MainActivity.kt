@@ -3,21 +3,31 @@ package com.gooofystudios.calc
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
+import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.*
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.animation.addListener
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.setPadding
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.Serializable
 import java.text.DecimalFormat
 
 
@@ -26,6 +36,9 @@ class MainActivity : AppCompatActivity() {
     private var velocityTracker: VelocityTracker? = null
     private var isAnimating = false
     private var isCircleAnimating = false
+    private lateinit var prefs: SharedPreferences
+    private var listCount = 0
+    private lateinit var layoutM: LinearLayoutManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +53,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if(prefs.getBoolean("madePurchase",false)){
+            equalButton.setTextColor(Color.parseColor("#FFD700"))
+        }
         if(appInfoTv.alpha == 0.0f) {
             val anim = ValueAnimator.ofFloat(0.0f, 1.0f)
             anim.addUpdateListener {
@@ -59,6 +75,46 @@ class MainActivity : AppCompatActivity() {
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
         )
 
+
+
+
+        prefs = getSharedPreferences("history", Context.MODE_PRIVATE)
+        if(prefs.getString("hisList",null) != null){
+            updateHis()
+        }
+
+
+        if(prefs.getBoolean("madePurchase",false)){
+            equalButton.setTextColor(Color.parseColor("#FFD700"))
+        }
+
+        if(prefs.getInt("numberOpened",0) > 0 && prefs.getInt("numberOpened",0) % 10 == 0 && !prefs.getBoolean("neverAsk",false)){
+            AlertDialog.Builder(this)
+                .setTitle("Are you enjoying the app?")
+                .setPositiveButton("Yes"){ d,i ->
+                    d.dismiss()
+                    AlertDialog.Builder(this)
+                        .setTitle("Do you want to support the app?")
+                        .setPositiveButton("Yes"){ d,i ->
+                            val intent = Intent(this@MainActivity,AppInfoActivity::class.java)
+                            startActivity(intent)
+                            d.dismiss()
+                        }
+                        .setNeutralButton("Not now"){ d,i ->
+                            d.dismiss()
+                        }
+                        .setNegativeButton("Never ask again"){ d,i ->
+                            prefs.edit().putBoolean("neverAsk",true).commit()
+                            d.dismiss()
+                        }
+                        .show()
+                }
+                .setNegativeButton("No"){ d,i ->
+                    d.dismiss()
+                }
+                .show()
+        }
+        prefs.edit().putInt("numberOpened",prefs.getInt("numberOpened",0) + 1).commit()
         mathView.config(
             "MathJax.Hub.Config({\n"+
                     "  CommonHTML: { linebreaks: { automatic: true } },\n"+
@@ -66,6 +122,22 @@ class MainActivity : AppCompatActivity() {
                     "         SVG: { linebreaks: { automatic: true } }\n"+
                     "});");
 
+
+
+        clearTv.setOnClickListener {
+            if(clearTv.alpha == 1.0f) {
+                AlertDialog.Builder(this)
+                    .setTitle("Are you sure you want to clear")
+                    .setPositiveButton("Yes"){ d,i ->
+                        prefs.edit().putString("hisList", ObjectSerializerHelper.objectToString(mutableListOf<String>() as Serializable)).commit()
+                        updateHis()
+                    }
+                    .setNegativeButton("No"){ d,i ->
+                        d.dismiss()
+                    }
+                    .show()
+            }
+        }
         equalButton.setOnClickListener {
             ///Calculates Expression and moves eqn to top
             if(!mainBigText.text.contains("=")) {
@@ -75,6 +147,10 @@ class MainActivity : AppCompatActivity() {
                     mainBigText.setText("= $answer")
                     mainBigText.setSelection(mainBigText.text.toString().length)
                 }
+            }
+            if(!prefs.getBoolean("equalPressed",false)){
+                Toast.makeText(this,"Tip: Holding the equal button will show proper mathematical format of equation",Toast.LENGTH_LONG).show()
+                prefs.edit().putBoolean("equalPressed",true).commit()
             }
         }
         equalButton.setOnLongClickListener {
@@ -93,7 +169,12 @@ class MainActivity : AppCompatActivity() {
                     mainBigText.setSelection(mainBigText.text.toString().length)
                 }
             }
-            mainMotion.transitionToState(R.id.math_visible)
+            val anim = ValueAnimator.ofFloat(0.0f,1.0f)
+            anim.addUpdateListener {
+                mathViewForground.alpha = it.animatedValue as Float
+            }
+            anim.duration = 200
+            anim.start()
 
             true
         }
@@ -101,10 +182,32 @@ class MainActivity : AppCompatActivity() {
         equalButton.setOnTouchListener { v, event ->
 
             if(event.action == MotionEvent.ACTION_UP){
-                mainMotion.transitionToState(R.id.start)
-
+                val anim = ValueAnimator.ofFloat(mathViewForground.alpha,0.0f)
+                anim.addUpdateListener {
+                    mathViewForground.alpha = it.animatedValue as Float
+                }
+                anim.duration = 200
+                anim.start()
             }
             false
+        }
+
+        radTv.setOnLongClickListener {
+            Log.e("CLICKED RAD","LOL")
+            val imageDialog: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
+            imageDialog.setTitle("Degrees are not yet supported\n")
+            val showImage = ImageView(this@MainActivity)
+            showImage.adjustViewBounds = true
+            showImage.setImageResource(R.drawable.rad_gang_meme)
+            imageDialog.setView(showImage)
+            imageDialog.setNeutralButton("Ok"){ d, i ->
+                d.dismiss()
+            }
+            imageDialog.setNegativeButton("I want degrees though"){ d, i ->
+                Toast.makeText(this,"Degrees' support will be added in a future update",Toast.LENGTH_LONG).show()
+            }
+            imageDialog.show()
+            true
         }
         mainBigText.setSelection(mainBigText.text.toString().length)
         darkenForeground.visibility = View.GONE
@@ -381,14 +484,17 @@ class MainActivity : AppCompatActivity() {
                     circleAnim.addListener(onEnd= {
                         mainSmallText.setText("")
                         mainBigText.setText("")
-                        val circleAnim2 = ValueAnimator.ofInt(1000.toPx(),0.toPx())
+                        val circleAnim2 = ValueAnimator.ofFloat(1.0f,00.0f)
                         circleAnim2.addUpdateListener {
-                            clearCircle.layoutParams.width = it.animatedValue as Int
-                            clearCircle.layoutParams.height = it.animatedValue as Int
-                            clearCircle.requestLayout()
+                            clearCircle.alpha = it.animatedValue as Float
                         }
                         circleAnim2.duration = 300
                         circleAnim2.addListener(onEnd = {
+                            clearCircle.layoutParams.width = 0
+                            clearCircle.layoutParams.height = 0
+                            clearCircle.requestLayout()
+
+                            clearCircle.alpha = 1.0f
                             isCircleAnimating = false
                         })
 
@@ -517,6 +623,13 @@ class MainActivity : AppCompatActivity() {
 
     ///Evaluated expression as string and return value or syntax error if exists
     private fun evalExpression(exp: String): String{
+        lateinit var hisList: MutableList<String>
+        if(prefs.getString("hisList",null) == null){
+            hisList = mutableListOf<String>()
+        }
+        else{
+            hisList = ObjectSerializerHelper.stringToObject(prefs.getString("hisList",null)) as MutableList<String>
+        }
         var expression = exp.replace("÷","/")
         expression = expression.replace("x","*")
         expression = expression.replace("π","pi")
@@ -524,7 +637,6 @@ class MainActivity : AppCompatActivity() {
         expression = addBrackets("!",expression)
         expression = addNeccMultiply(expression)
 
-        Log.e("Evaluating: ",expression)
 
 
         //Used for showing formatted math expression
@@ -541,7 +653,6 @@ class MainActivity : AppCompatActivity() {
 
 
 
-        Log.e("EXP",mathExpression)
 
 
         val evaluator = CustomDoubleEvaluator()
@@ -551,23 +662,63 @@ class MainActivity : AppCompatActivity() {
 
             if (answer.toInt().toDouble() == answer) {
                 mathView.text = "$$$mathExpression = ${answer.toInt()}$$"
+                val item = HistoryItem(exp,answer.toInt().toString())
+                val itemStr = Gson().toJson(item)
+                hisList.add(itemStr)
+                prefs.edit().putString("hisList",ObjectSerializerHelper.objectToString(hisList as Serializable)).commit()
+                updateHis()
                 return answer.toInt().toString()
             } else {
                 if(answer.toString().contains(".")){
                     if(answer.toString().length > 12){
                         val df = DecimalFormat("0.0000000")
                         mathView.text = "$$$mathExpression = ${df.format(answer)}$$"
+                        val item = HistoryItem(exp,df.format(answer))
+                        val itemStr = Gson().toJson(item)
+                        hisList.add(itemStr)
+                        prefs.edit().putString("hisList",ObjectSerializerHelper.objectToString(hisList as Serializable)).commit()
+                        updateHis()
                         return df.format(answer)
 
                     }
                 }
                 mathView.text = "$$$mathExpression = ${answer}$$"
+                val item = HistoryItem(exp,answer.toString())
+                val itemStr = Gson().toJson(item)
+                hisList.add(itemStr)
+                prefs.edit().putString("hisList",ObjectSerializerHelper.objectToString(hisList as Serializable)).commit()
+                updateHis()
                 return answer.toString()
             }
         }catch (e: IllegalArgumentException){
             mainBigText.error =  "Syntax Error"
+
+
             return ""
         }
+
+    }
+
+    private fun updateHis(){
+        val list = ObjectSerializerHelper.stringToObject(prefs.getString("hisList",null)) as MutableList<String>
+        val hisList = mutableListOf<HistoryItem>()
+        listCount = hisList.size-1
+        for(str in list){
+            hisList.add(Gson().fromJson(str,HistoryItem::class.java))
+        }
+
+        val adapter = HistoryAdapter(hisList.reversed().toMutableList(),this)
+        layoutM = LinearLayoutManager(this)
+        layoutM.reverseLayout = true
+        layoutM.stackFromEnd = true
+        historyRecycler.adapter = adapter
+
+        historyRecycler.layoutManager = layoutM
+        layoutM.scrollToPosition(0)
+
+
+
+
 
     }
 
@@ -853,9 +1004,10 @@ class MainActivity : AppCompatActivity() {
                     animator.start()
 
 
-                    val animator2 = ValueAnimator.ofInt(37.toPx(),30.toPx())
+                    val animator2 = ValueAnimator.ofInt(35.toPx(),20.toPx())
                     animator2.addUpdateListener {
-                        switchButton.setPadding(it.animatedValue as Int)
+                        switchButton.layoutParams.width = it.animatedValue as Int
+                        switchButton.requestLayout()
                     }
                     animator2.duration = 500
                     animator2.start()
@@ -893,9 +1045,10 @@ class MainActivity : AppCompatActivity() {
 
                     })
 
-                    val animator2 = ValueAnimator.ofInt(30.toPx(),37.toPx())
+                    val animator2 = ValueAnimator.ofInt(20.toPx(),35.toPx())
                     animator2.addUpdateListener {
-                        switchButton.setPadding(it.animatedValue as Int)
+                        switchButton.layoutParams.width = it.animatedValue as Int
+                        switchButton.requestLayout()
                     }
                     animator2.duration = 500
                     animator2.start()
@@ -1008,10 +1161,37 @@ class MainActivity : AppCompatActivity() {
             override fun onTransitionCompleted(p0: MotionLayout?, current: Int) {
                 if(current == R.id.start){
                     darkenForeground.visibility = View.GONE
+                    historyRecycler.alpha = 0.0f
+                    divderRc.alpha = 0.0f
+                    clearTv.alpha = 0.0f
+
                 }
+                else{
+                    if(historyRecycler.alpha == 0.0f) {
+                        layoutM.scrollToPosition(0)
+                        historyRecycler.scrollToPosition(0)
+                        val anim = ValueAnimator.ofFloat(0.0f, 1.0f)
+                        anim.addUpdateListener {
+                            historyRecycler.alpha = it.animatedValue as Float
+                            clearTv.alpha = it.animatedFraction as Float
+                        }
+                        anim.duration = 300
+                        anim.start()
+
+                        val anim2 = ValueAnimator.ofFloat(0.0f, 0.5f)
+                        anim2.addUpdateListener {
+                            divderRc.alpha = it.animatedValue as Float
+                        }
+                        anim2.duration = 300
+                        anim2.start()
+                    }
+                }
+
+
             }
 
             override fun onTransitionChange(p0: MotionLayout?, p1: Int, p2: Int, p3: Float) {
+
             }
 
             override fun onTransitionStarted(p0: MotionLayout?, start: Int, end: Int) {
