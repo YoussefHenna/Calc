@@ -71,6 +71,10 @@ class MainActivity : AppCompatActivity() {
     //Initialized default values and click listeners (instead of cramming "onCreate()")
     @SuppressLint("ClickableViewAccessibility")
     private fun initViews(){
+
+
+        layoutM = LinearLayoutManager(this)
+
         window.setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
         )
@@ -111,6 +115,14 @@ class MainActivity : AppCompatActivity() {
                 }
                 .setNegativeButton("No"){ d,i ->
                     d.dismiss()
+                    prefs.edit().putBoolean("neverAsk",true).commit()
+                    AlertDialog.Builder(this)
+                        .setTitle("Sorry to hear that, we won't ask again")
+                        .setMessage("We recommend you leave an honest review on the play store so that we can try and improve the app.")
+                        .setNeutralButton("Ok"){ d,i ->
+                            d.dismiss()
+                        }
+                        .show()
                 }
                 .show()
         }
