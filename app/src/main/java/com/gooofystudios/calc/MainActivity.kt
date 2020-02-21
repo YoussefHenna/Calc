@@ -609,9 +609,16 @@ class MainActivity : AppCompatActivity() {
                     anim.duration = 100
                     anim.start()
                     Handler().postDelayed({
-                        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, appInfo, "appInfoTitle")
-                        val intent = Intent(this@MainActivity,AppInfoActivity::class.java)
-                        startActivity(intent,options.toBundle())
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, appInfo, "appInfoTitle")
+                            val intent = Intent(this@MainActivity,AppInfoActivity::class.java)
+                            startActivity(intent,options.toBundle())
+                        }
+                        else{
+                            val intent = Intent(this@MainActivity,AppInfoActivity::class.java)
+                            startActivity(intent)
+                        }
+
                     },100)
 
                 }
