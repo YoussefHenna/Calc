@@ -88,28 +88,30 @@ class AppInfoActivity: AppCompatActivity() {
             startActivity(browserIntent)
         }
 
-        billingClient = BillingClient.newBuilder(this).setListener(object: PurchasesUpdatedListener{
-            override fun onPurchasesUpdated(result: BillingResult?, purchases: MutableList<Purchase>?) {
-                if (result?.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
-                    for (purchase in purchases) {
-                        scope.launch(Dispatchers.IO){
-                            handlePurchase(purchase)
-                        }
+        billingClient = BillingClient.newBuilder(this).setListener { result, purchases ->
+            if (result?.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
+                for (purchase in purchases) {
+                    scope.launch(Dispatchers.IO) {
+                        handlePurchase(purchase)
                     }
-                    AlertDialog.Builder(this@AppInfoActivity)
-                        .setTitle("Purchase Successful!")
-                        .setMessage("Thank you for your support. You will now receive a golden equal button.")
-                        .show()
-                } else if (result?.responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
-                    Toast.makeText(this@AppInfoActivity,"Purchase was cancelled",Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(this@AppInfoActivity,"An error occurred during purchase",Toast.LENGTH_LONG).show()
-                    Log.e("ERROR PURCHASE",result?.debugMessage)
-
                 }
+                AlertDialog.Builder(this@AppInfoActivity)
+                    .setTitle("Purchase Successful!")
+                    .setMessage("Thank you for your support. You will now receive a golden equal button.")
+                    .show()
+            } else if (result?.responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
+                Toast.makeText(this@AppInfoActivity, "Purchase was cancelled", Toast.LENGTH_LONG)
+                    .show()
+            } else {
+                Toast.makeText(
+                    this@AppInfoActivity,
+                    "An error occurred during purchase",
+                    Toast.LENGTH_LONG
+                ).show()
+                Log.e("ERROR PURCHASE", result?.debugMessage)
 
             }
-        }).enablePendingPurchases().build()
+        }.enablePendingPurchases().build()
         connectToBilling()
 
 
@@ -141,7 +143,7 @@ class AppInfoActivity: AppCompatActivity() {
 
 
     suspend fun queryPurchases(){
-        val response = billingClient.queryPurchases("inapp")
+        val response = billingClient.queryPurchasesAsync("inapp")
         if(response.billingResult.responseCode == BillingClient.BillingResponseCode.OK){
             for(purchase in response.purchasesList){
                 handlePurchase(purchase)
