@@ -13,8 +13,8 @@ android {
         applicationId "com.gooofystudios.calc"
         minSdkVersion 19
         targetSdkVersion 33
-        versionCode 6
-        versionName "1.5"
+        versionCode 7
+        versionName "1.6"
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
